@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "npm install && tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview --host"
   },
   "dependencies": {
     "react-router-dom": "^6.27.0"
