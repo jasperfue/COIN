@@ -25,7 +25,8 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  justify-content: center;
+  align-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -33,25 +34,64 @@ body {
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  margin-bottom: 1rem;
+  color: #e0e0e0;
 }
 
 button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: 1.2em;
   font-weight: 500;
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background-color 0.25s, transform 0.1s;
 }
 button:hover {
   border-color: #646cff;
+  background-color: #333;
+  transform: scale(1.05);
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  background-color: #1a1a1a;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
+.form-container label {
+  font-size: 1.1em;
+  margin-bottom: 0.5rem;
+}
+
+.form-container input,
+.form-container select {
+  padding: 0.5em;
+  font-size: 1.1em;
+  border-radius: 6px;
+  border: 1px solid #646cff;
+  background-color: #2d2d2d;
+  color: #fff;
+}
+
+.form-container button {
+  align-self: flex-end;
+}
+
+.confirmation-message {
+  margin-top: 1rem;
+  color: #4caf50;
 }
 
 @media (prefers-color-scheme: light) {
@@ -64,5 +104,14 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+  .form-container {
+    background-color: #f0f0f0;
+    color: #000;
+  }
+  .form-container input,
+  .form-container select {
+    background-color: #fff;
+    color: #000;
   }
 }
