@@ -11,7 +11,6 @@ export const formatDateToLocal = (date: Date | string) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     const offset = dateObj.getTimezoneOffset();
     const localDate = new Date(dateObj.getTime() - offset * 60 * 1000);
-    console.log(dateObj, localDate)
     return localDate.toISOString().split('T')[0];
 };
 

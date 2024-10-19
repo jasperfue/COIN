@@ -46,7 +46,6 @@ router.post('/:name', async (req, res) => {
        RETURNING *`,
             [name, date, sleep_cycle_score, feeling]
         );
-        console.log(req.body);
         client.release();
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -58,7 +57,6 @@ router.post('/:name', async (req, res) => {
 router.put('/:name', async (req, res) => {
     const { name } = req.params;
     const { date, sleep_cycle_score, feeling } = req.body;
-    console.log('PUT Request:', { name, date, sleep_cycle_score, feeling }); // Debugging
 
     try {
         const client = await pool.connect();
