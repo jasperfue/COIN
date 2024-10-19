@@ -1,13 +1,9 @@
 import { useMutation, useQueryClient, UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { formatDateToLocal } from './useFetchUserData';
+import {UserData} from "../types.ts";
 
-interface FormData {
-    date: Date;
-    sleepCycleScore: number;
-    feeling: number;
-}
 
-const mapFrontendToApiData = (data: FormData) => {
+const mapFrontendToApiData = (data: UserData) => {
     return {
         date: formatDateToLocal(data.date),
         sleep_cycle_score: data.sleepCycleScore,
@@ -15,7 +11,7 @@ const mapFrontendToApiData = (data: FormData) => {
     };
 };
 
-const saveUserData = async (name: string, data: FormData, isUpdate: boolean) => {
+const saveUserData = async (name: string, data: UserData, isUpdate: boolean) => {
     const method = isUpdate ? 'PUT' : 'POST';
 
     const formattedData = mapFrontendToApiData(data);  // Map Daten für die API
@@ -38,12 +34,12 @@ const saveUserData = async (name: string, data: FormData, isUpdate: boolean) => 
 export const useSaveUserData = (
     name: string,
     isUpdate: boolean,
-    options?: UseMutationOptions<FormData, Error, FormData>
-): UseMutationResult<FormData, Error, FormData> => {
+    options?: UseMutationOptions<UserData, Error, UserData>
+): UseMutationResult<UserData, Error, UserData> => {
     const queryClient = useQueryClient();
 
-    return useMutation<FormData, Error, FormData>({
-        mutationFn: (data: FormData) => saveUserData(name, data, isUpdate),
+    return useMutation<UserData, Error, UserData>({
+        mutationFn: (data: UserData) => saveUserData(name, data, isUpdate),
         onSuccess: () => {
             void queryClient.invalidateQueries({ queryKey: ['userData', name] });
         },

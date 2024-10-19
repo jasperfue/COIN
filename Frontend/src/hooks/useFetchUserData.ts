@@ -1,11 +1,6 @@
-import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import {useQuery, UseQueryOptions} from '@tanstack/react-query';
+import {UserData} from "../types.ts";
 
-
-interface UserData {
-    date: string;
-    sleepCycleScore: number;
-    feeling: number;
-}
 
 export const formatDateToLocal = (date: Date | string) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -41,9 +36,9 @@ const fetchUserData = async (name: string, date: Date): Promise<UserData | null>
 export const useFetchUserData = (
     name: string,
     date: Date,
-    options?: UseQueryOptions<UserData>,
-): UseQueryResult => {
-    return useQuery<UserData>({
+    options?: UseQueryOptions<UserData | null>,
+) => {
+    return useQuery<UserData | null>({
         queryKey: ['userData', name, formatDateToLocal(date)],
         queryFn: () => fetchUserData(name, date),
         ...options

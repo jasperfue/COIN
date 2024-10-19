@@ -1,7 +1,8 @@
 import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import {formatDateToLocal, useFetchUserData} from './hooks/useFetchUserData';
+import { useFetchUserData } from './hooks/useFetchUserData';
 import { useSaveUserData } from './hooks/useSaveUserData';
+import { UserData } from './types';  // Stelle sicher, dass der UserData-Typ exportiert wird
 
 const getYesterdayDate = (): Date => {
     const today = new Date();
@@ -11,19 +12,23 @@ const getYesterdayDate = (): Date => {
 
 const DetailPage = () => {
     const { name } = useParams<{ name: string }>();
+
     const [selectedDate, setSelectedDate] = useState<Date>(getYesterdayDate());
     const [sleepCycleScore, setSleepCycleScore] = useState<number>(1);
     const [feeling, setFeeling] = useState<number>(1);
 
-    const { data: formData, isError, error } = useFetchUserData(name!, selectedDate);
+    const { data: formData, isLoading: isFetching, isError, error } = useFetchUserData(name!, selectedDate);
     const isUpdate = !!formData;
 
-    const { mutate: saveUserData, isLoading: isSaving, isSuccess, error: saveError } = useSaveUserData(name!, isUpdate);
+    const { mutate: saveUserData, isPending: isSaving, isSuccess, error: saveError } = useSaveUserData(name!, isUpdate);
 
     useEffect(() => {
         if (formData) {
             setSleepCycleScore(formData.sleepCycleScore);
             setFeeling(formData.feeling);
+        } else {
+            setSleepCycleScore(1);
+            setFeeling(1);
         }
     }, [formData]);
 
@@ -34,8 +39,8 @@ const DetailPage = () => {
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
 
-        const data = {
-            date: formData?.date || selectedDate,
+        const data: UserData = {
+            date: formData?.date || selectedDate.toISOString().split('T')[0],  // Verwendet das geladene Datum oder das ausgewählte Datum
             sleepCycleScore: sleepCycleScore,
             feeling: feeling,
         };
@@ -43,12 +48,16 @@ const DetailPage = () => {
         saveUserData(data);
     };
 
+    if (isFetching) {
+        return <div>Lade Daten...</div>;
+    }
+
     if (isSaving) {
         return <div>Speichere Daten...</div>;
     }
 
-    if (isError) {
-        return <div>Fehler: {error instanceof Error ? error.message : 'Unbekannter Fehler'}</div>;
+    if (isError && !formData) {
+        return <div>Fehler beim Laden der Daten: {error instanceof Error ? error.message : 'Unbekannter Fehler'}</div>;
     }
 
     if (saveError) {
@@ -59,11 +68,12 @@ const DetailPage = () => {
         <div>
             <h2>Details für {name}</h2>
 
+            {/* Datumsauswahl außerhalb des Formulars */}
             <div className="date-picker-container">
                 <label>Datum auswählen: </label>
                 <input
                     type="date"
-                    value={formatDateToLocal(selectedDate)}
+                    value={selectedDate.toISOString().split('T')[0]}  // Datum als YYYY-MM-DD anzeigen
                     onChange={handleDateChange}
                 />
             </div>
