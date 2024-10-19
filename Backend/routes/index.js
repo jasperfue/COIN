@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var { Pool } = require('pg');
+const userDataRoutes = require('./user-data');
 require('dotenv').config();
 
 
@@ -28,5 +29,7 @@ router.get('/db-connection', async (req, res) => {
     res.status(500).send('Verbindung mit DB fehlgeschlagen');
   }
 });
+
+router.use('/user-data', userDataRoutes);
 
 module.exports = router;

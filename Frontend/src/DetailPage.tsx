@@ -1,119 +1,69 @@
-import {useState, useEffect, FormEvent, ChangeEvent} from 'react';
+import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import {formatDateToLocal, useFetchUserData} from './hooks/useFetchUserData';
+import { useSaveUserData } from './hooks/useSaveUserData';
 
-interface FormData {
-    date: Date;
-    sleepCycleScore: number;
-    feeling: number;
-}
-
-const userDataPath = '/user-data';
+const getYesterdayDate = (): Date => {
+    const today = new Date();
+    today.setDate(today.getDate() - 1);
+    return today;
+};
 
 const DetailPage = () => {
     const { name } = useParams<{ name: string }>();
-    const [formData, setFormData] = useState<FormData>({
-        date: new Date(),
-        sleepCycleScore: 1,
-        feeling: 1
-    });
-    const [isLoading, setIsLoading] = useState(false);
-    const [isUpdate, setIsUpdate] = useState(false);
-    const [confirmationMessage, setConfirmationMessage] = useState('');
-    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]); // Datum als String im Format YYYY-MM-DD
+    const [selectedDate, setSelectedDate] = useState<Date>(getYesterdayDate());
+    const [sleepCycleScore, setSleepCycleScore] = useState<number>(1);
+    const [feeling, setFeeling] = useState<number>(1);
 
-    // API-Call zum Laden der Daten auf Basis des Datums
-    const fetchData = async (date: string) => {
-        setIsLoading(true);
-        try {
-            const response = await fetch(`${userDataPath}/${name}?date=${date}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data) {
-                    setFormData({
-                        date: data.date ? new Date(data.date) : new Date(),
-                        sleepCycleScore: data.sleepCycleScore || 1,
-                        feeling: data.feeling || 1,
-                    });
-                    setIsUpdate(true); // Es gibt bereits Daten, wir updaten
-                } else {
-                    // Falls keine Daten vorhanden sind, setze die Standardwerte
-                    setFormData({
-                        date: new Date(date),
-                        sleepCycleScore: 1,
-                        feeling: 1
-                    });
-                    setIsUpdate(false);
-                }
-            }
-        } catch (error) {
-            console.error('Fehler beim Laden der Daten', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const { data: formData, isError, error } = useFetchUserData(name!, selectedDate);
+    const isUpdate = !!formData;
 
-    // Fetch-Daten bei Erstaufruf basierend auf dem heutigen Datum
+    const { mutate: saveUserData, isLoading: isSaving, isSuccess, error: saveError } = useSaveUserData(name!, isUpdate);
+
     useEffect(() => {
-        void fetchData(selectedDate);
-    }, [name, selectedDate]);
-
-    // Handling des Date-Pickers außerhalb des Formulars
-    const handleDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const newDate = e.target.value;
-        setSelectedDate(newDate); // Aktualisiere das ausgewählte Datum
-        void fetchData(newDate); // Lade neue Daten basierend auf dem ausgewählten Datum
-    };
-
-    // Handling des Form Inputs für Sleep Cycle Score und Feeling
-    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: Number(value) // Die Felder als Zahl verarbeiten
-        });
-    };
-
-    // Form Submission (POST/PUT)
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        try {
-            const requestOptions = {
-                method: isUpdate ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    date: formData.date.toISOString() // Date als ISO-String senden
-                }),
-            };
-
-            const response = await fetch(`${userDataPath}/${name}`, requestOptions);
-
-            if (response.ok) {
-                setConfirmationMessage(isUpdate
-                    ? 'Informationen wurden erfolgreich aktualisiert!'
-                    : 'Informationen wurden erfolgreich erstellt!');
-            } else {
-                throw new Error('Fehler beim Speichern der Daten');
-            }
-        } catch (error) {
-            console.error(error);
+        if (formData) {
+            setSleepCycleScore(formData.sleepCycleScore);
+            setFeeling(formData.feeling);
         }
+    }, [formData]);
+
+    const handleDateChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setSelectedDate(new Date(e.target.value));
     };
 
-    if (isLoading) {
-        return <div>Lade Daten...</div>;
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault();
+
+        const data = {
+            date: formData?.date || selectedDate,
+            sleepCycleScore: sleepCycleScore,
+            feeling: feeling,
+        };
+
+        saveUserData(data);
+    };
+
+    if (isSaving) {
+        return <div>Speichere Daten...</div>;
+    }
+
+    if (isError) {
+        return <div>Fehler: {error instanceof Error ? error.message : 'Unbekannter Fehler'}</div>;
+    }
+
+    if (saveError) {
+        return <div>Fehler beim Speichern: {saveError.message ?? 'Unbekannter Fehler'}</div>;
     }
 
     return (
         <div>
             <h2>Details für {name}</h2>
 
-            {/* Datumsauswahl außerhalb des Formulars */}
             <div className="date-picker-container">
                 <label>Datum auswählen: </label>
                 <input
                     type="date"
-                    value={selectedDate}
+                    value={formatDateToLocal(selectedDate)}
                     onChange={handleDateChange}
                 />
             </div>
@@ -124,8 +74,8 @@ const DetailPage = () => {
                     <input
                         type="number"
                         name="sleepCycleScore"
-                        value={formData.sleepCycleScore}
-                        onChange={handleChange}
+                        value={sleepCycleScore}
+                        onChange={(e) => setSleepCycleScore(Number(e.target.value))}
                         min={1}
                         max={100}
                     />
@@ -134,8 +84,8 @@ const DetailPage = () => {
                     <label>Eigenes Empfinden: </label>
                     <select
                         name="feeling"
-                        value={formData.feeling}
-                        onChange={handleChange}
+                        value={feeling}
+                        onChange={(e) => setFeeling(Number(e.target.value))}
                     >
                         <option value={1}>1 - sehr schlecht</option>
                         <option value={2}>2</option>
@@ -149,7 +99,7 @@ const DetailPage = () => {
                 </button>
             </form>
 
-            {confirmationMessage && <p className="confirmation-message">{confirmationMessage}</p>}
+            {isSuccess && <p className="confirmation-message">Informationen wurden erfolgreich gespeichert!</p>}
         </div>
     );
 };
